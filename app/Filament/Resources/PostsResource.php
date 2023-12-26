@@ -20,80 +20,91 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Group;
 
-// class PostResource extends Resource
-// {
-//     protected static ?string $model = Posts::class;
-
-//     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-//     public static function form(Form $form): Form
-//     {
-//         return $form
-//             ->schema([
-//                 TextInput::make('title')->required(),
-//                 TextInput::make('slug')->required(),
-                
-//                 Select::make('category') // Renamed from status to category
-//                 ->options([
-//                     'PHP' => 'PHP',
-//                     'Laravel' => 'Laravel',
-//                     'Livewire' => 'Livewire',
-//                 ]),
-
-//                 ColorPicker::make('color')->required(),
-//                 MarkdownEditor::make('content')->required(),
-//                 FileUpload::make('thumbnail') // Corrected spelling
-//                     ->disk('public')
-//                     ->directory('thumbnails'),
-//                 TagsInput::make('tags')->required(),
-//                 Checkbox::make('published')->required(),
-//             ]);
-//     }
 
 
 class PostsResource extends Resource
 {
     protected static ?string $model = Posts::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-s-clipboard-document-list';
 
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                TextInput::make('title')->required(),
-                TextInput::make('slug')->required(),
-                
-                Select::make('category') // Renamed from status to category
-                ->options([
-                    'PHP' => 'PHP',
-                    'Laravel' => 'Laravel',
-                    'Livewire' => 'Livewire',
-                ]),
+             -> schema ( [
+                Section:: make( 'Create a Post')
+                   ->description ('create posts over here.')
+                      ->schema ( [
+                         TextInput::make ('title')->required (),
+                         TextInput::make ('slug')->required (),
+                         Select::make('category') // Renamed from status to category
+                        ->options([
+                           'PHP' => 'PHP',
+                           'Laravel' => 'Laravel',
+                           'Livewire' => 'Livewire',
+                                ]),
 
-                ColorPicker::make('color')->required(),
-                MarkdownEditor::make('content')->required(),
-                FileUpload::make('thumbnail') // Corrected spelling
-                    ->disk('public')
-                    ->directory('thumbnails'),
-                TagsInput::make('tags')->required(),
-                Checkbox::make('published')->required(),
-            ]);
+                        ColorPicker::make('color')->required (),
+                        MarkdownEditor::make('content')->required () -> columnSpanFull (),
+                         ]) ->columnSpan (2) ->columns (2),
+                    Group::make () ->schema([
+                        Section::make("Image")
+                           ->collapsible ()
+                           ->schema([
+                    FileUpload::make('thumbnail')->disk('public')->directory('thumbnails'),
+                     ]) ->columnSpan (1) ,
+                        Section::make ( 'Meta' )->schema ([
+                        TagsInput::make ('tags')->required(),
+                        Checkbox::make('published')->required(),
+                        ])
+                        ]),
+                        ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\ImageColumn::make('thumbnail')
+                ->disk('public') // Specify the disk if different from the default
+                ->url(fn ($record) => $record->thumbnails_url), // Assuming you have an accessor for the URL
+
+                Tables\Columns\TextColumn::make('color'),
+                Tables\Columns\TextColumn::make('title')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('slug')
+                    ->sortable()
+                    ->searchable(),
+                
+                Tables\Columns\TextColumn::make('content')
+                    ->limit(50), // Limit the content displayed
+                
+                Tables\Columns\TagsColumn::make('tags'),
+                Tables\Columns\BooleanColumn::make('published')
+                    ->label('Published Status'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->sortable()
+                    ->label('published on'),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->sortable(),
+                // Add any additional columns you need here
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                // You can add more actions if necessary
             ])
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
+            // ->actions([
+            //     Tables\Actions\EditAction::make(),
+            // ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -104,7 +115,9 @@ class PostsResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            //AuthorsRelationManager::class,
+            //CommentRelationManager::class
+
         ];
     }
 
